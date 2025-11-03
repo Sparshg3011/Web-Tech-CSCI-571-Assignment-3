@@ -10,6 +10,12 @@ const SearchIcon = (): JSX.Element => (
 	</svg>
 );
 
+type FormErrors = {
+	keyword?: string;
+	location?: string;
+	distance?: string;
+};
+
 export const EventSearch = (): JSX.Element => {
 	const [keyword, setKeyword] = useState("");
 	const [category, setCategory] = useState("All");
@@ -18,6 +24,37 @@ export const EventSearch = (): JSX.Element => {
 	const [distance, setDistance] = useState("10");
 	const [suggestions, setSuggestions] = useState<string[]>([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
+	const [errors, setErrors] = useState<FormErrors>({});
+
+	const clearError = (field: keyof FormErrors) => {
+		setErrors((prev) => {
+			if (!prev[field]) {
+				return prev;
+			}
+			const { [field]: _removed, ...rest } = prev;
+			return rest;
+		});
+	};
+
+	const validateForm = (): boolean => {
+		const newErrors: FormErrors = {};
+
+		if (!keyword.trim()) {
+			newErrors.keyword = "Please enter some keywords.";
+		}
+
+		if (!autoDetect && !location.trim()) {
+			newErrors.location = "Location is required when auto-detect is disabled.";
+		}
+
+		const distanceValue = Number(distance);
+		if (!distance.trim() || Number.isNaN(distanceValue) || distanceValue <= 0) {
+			newErrors.distance = "Please enter a distance greater than 0.";
+		}
+
+		setErrors(newErrors);
+		return Object.keys(newErrors).length === 0;
+	};
 
 	useEffect(() => {
 		if (autoDetect) {
@@ -62,18 +99,39 @@ export const EventSearch = (): JSX.Element => {
 		setKeyword(value);
 		fetchSuggestions(value);
 		setShowSuggestions(true);
+		if (value.trim()) {
+			clearError("keyword");
+		}
 	};
 
 	const handleSuggestionClick = (suggestion: string) => {
 		setKeyword(suggestion);
 		setShowSuggestions(false);
+		clearError("keyword");
+	};
+
+	const handleLocationChange = (value: string) => {
+		setLocation(value);
+		if (value.trim()) {
+			clearError("location");
+		}
+	};
+
+	const handleDistanceChange = (value: string) => {
+		setDistance(value);
+		const numericValue = Number(value);
+		if (value.trim() && !Number.isNaN(numericValue) && numericValue > 0) {
+			clearError("distance");
+		}
 	};
 
 	const handleSearch = async () => {
-		if (!keyword.trim() || !location.trim()) {
-			alert("Please fill in all required fields");
+		if (!validateForm()) {
+			setShowSuggestions(false);
 			return;
 		}
+
+		setShowSuggestions(false);
 
 		try {
 			const API_BASE_URL =
@@ -82,7 +140,7 @@ export const EventSearch = (): JSX.Element => {
 				keyword: keyword.trim(),
 				category,
 				location: location.trim(),
-				distance: distance.toString(),
+				distance: distance.trim(),
 			});
 
 			const response = await fetch(`${API_BASE_URL}/events/search?${params}`);
@@ -112,7 +170,9 @@ export const EventSearch = (): JSX.Element => {
 								onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
 								onFocus={() => keyword && setShowSuggestions(true)}
 								placeholder="Search for events..."
-								className="form-input"
+								className={`form-input${errors.keyword ? " error" : ""}`}
+								aria-invalid={Boolean(errors.keyword)}
+								aria-describedby={errors.keyword ? "keyword-error" : undefined}
 								autoComplete="off"
 							/>
 							{showSuggestions && suggestions.length > 0 && (
@@ -127,6 +187,13 @@ export const EventSearch = (): JSX.Element => {
 										</li>
 									))}
 								</ul>
+							)}
+						</div>
+						<div className="error-container">
+							{errors.keyword && (
+								<p id="keyword-error" className="error-message">
+									{errors.keyword}
+								</p>
 							)}
 						</div>
 					</div>
@@ -163,7 +230,13 @@ export const EventSearch = (): JSX.Element => {
 										id="auto-detect"
 										type="checkbox"
 										checked={autoDetect}
-										onChange={(e) => setAutoDetect(e.target.checked)}
+										onChange={(e) => {
+											const isChecked = e.target.checked;
+											setAutoDetect(isChecked);
+											if (isChecked) {
+												clearError("location");
+											}
+										}}
 										className="switch-input"
 										aria-label="Auto-detect location"
 									/>
@@ -175,11 +248,20 @@ export const EventSearch = (): JSX.Element => {
 							id="location"
 							type="text"
 							value={location}
-							onChange={(e) => setLocation(e.target.value)}
+							onChange={(e) => handleLocationChange(e.target.value)}
 							placeholder="Enter city, district or street..."
-							className="form-input"
+							className={`form-input${errors.location ? " error" : ""}`}
+							aria-invalid={Boolean(errors.location)}
+							aria-describedby={errors.location ? "location-error" : undefined}
 							disabled={autoDetect}
 						/>
+						<div className="error-container">
+							{errors.location && !autoDetect && (
+								<p id="location-error" className="error-message">
+									{errors.location}
+								</p>
+							)}
+						</div>
 					</div>
 
 					{/* Distance */}
@@ -192,11 +274,20 @@ export const EventSearch = (): JSX.Element => {
 								id="distance"
 								type="number"
 								value={distance}
-								onChange={(e) => setDistance(e.target.value)}
-								className="form-input distance-input"
+								onChange={(e) => handleDistanceChange(e.target.value)}
+								className={`form-input distance-input${errors.distance ? " error" : ""}`}
+								aria-invalid={Boolean(errors.distance)}
+								aria-describedby={errors.distance ? "distance-error" : undefined}
 								min="0"
 							/>
 							<span className="distance-unit">miles</span>
+						</div>
+						<div className="error-container">
+							{errors.distance && (
+								<p id="distance-error" className="error-message">
+									{errors.distance}
+								</p>
+							)}
 						</div>
 					</div>
 
