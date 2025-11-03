@@ -1,0 +1,24 @@
+.favorites-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 40px;
+  background-color: #ffffff;
+}
+
+.empty-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+  opacity: 0.2;
+}
+
+.empty-message {
+  font-size: 15px;
+  color: #666;
+  margin: 0;
+}
+
