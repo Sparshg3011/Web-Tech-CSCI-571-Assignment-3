@@ -53,3 +53,27 @@ export interface SearchParams {
   location: string;
   distance: number;
 }
+
+export interface SpotifyArtistInfo {
+  id: string;
+  name: string;
+  followers: number;
+  popularity: number;
+  genres: string[];
+  spotifyUrl?: string;
+  image?: string;
+}
+
+export interface SpotifyAlbumInfo {
+  id: string;
+  name: string;
+  releaseDate?: string;
+  totalTracks?: number;
+  spotifyUrl?: string;
+  image?: string;
+}
+
+export interface SpotifyArtistResponse {
+  artist: SpotifyArtistInfo | null;
+  albums: SpotifyAlbumInfo[];
+}

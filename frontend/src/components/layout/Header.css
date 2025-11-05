@@ -38,6 +38,7 @@
   color: #737373;
   transition: color 0.2s;
   font-weight: 400;
+  text-decoration: none;
 }
 
 .nav-link span {

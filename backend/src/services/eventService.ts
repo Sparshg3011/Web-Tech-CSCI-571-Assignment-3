@@ -1,5 +1,12 @@
 import dotenv from 'dotenv';
-import { SearchParams, Event, EventDetail } from '../types';
+import {
+  SearchParams,
+  Event,
+  EventDetail,
+  SpotifyArtistResponse,
+  SpotifyAlbumInfo,
+  SpotifyArtistInfo,
+} from '../types';
 
 dotenv.config();
 
@@ -7,6 +14,21 @@ const rawTicketmasterKey =
   process.env.TM_API_KEY || process.env.TICKETMASTER_API_KEY || '';
 const TICKETMASTER_API_KEY = rawTicketmasterKey.replace(/^['"]|['"]$/g, '').trim();
 const TICKETMASTER_BASE_URL = 'https://app.ticketmaster.com/discovery/v2';
+
+const rawSpotifyClientId = process.env.SPOTIFY_CLIENT_ID || '';
+const rawSpotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET || '';
+const SPOTIFY_CLIENT_ID = rawSpotifyClientId.replace(/^['"]|['"]$/g, '').trim();
+const SPOTIFY_CLIENT_SECRET = rawSpotifyClientSecret.replace(/^['"]|['"]$/g, '').trim();
+
+type SpotifyTokenCache = {
+  token: string;
+  expiresAt: number;
+};
+
+const spotifyTokenCache: SpotifyTokenCache = {
+  token: '',
+  expiresAt: 0,
+};
 
 const createTicketmasterUrl = (
   path: string,
@@ -17,6 +39,132 @@ const createTicketmasterUrl = (
     url.searchParams.append(key, value);
   });
   return url.toString();
+};
+
+const getSpotifyAccessToken = async (): Promise<string> => {
+  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+    throw new Error('Spotify credentials are missing');
+  }
+
+  const now = Date.now();
+  if (spotifyTokenCache.token && now < spotifyTokenCache.expiresAt) {
+    return spotifyTokenCache.token;
+  }
+
+  const credentials = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64');
+  const response = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: `Basic ${credentials}`,
+    },
+    body: 'grant_type=client_credentials',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Spotify token error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as { access_token: string; expires_in: number };
+
+  spotifyTokenCache.token = data.access_token;
+  spotifyTokenCache.expiresAt = now + Math.max((data.expires_in - 60) * 1000, 0);
+
+  return spotifyTokenCache.token;
+};
+
+const normaliseAlbumList = (items: Array<any> = []): SpotifyAlbumInfo[] => {
+  const seen = new Map<string, SpotifyAlbumInfo>();
+
+  items.forEach((album) => {
+    if (!album || !album.name) {
+      return;
+    }
+
+    const key = album.name.toLowerCase();
+    if (seen.has(key)) {
+      return;
+    }
+
+    const cover = album.images?.[0]?.url;
+
+    seen.set(key, {
+      id: album.id ?? '',
+      name: album.name ?? '',
+      releaseDate: album.release_date,
+      totalTracks: album.total_tracks,
+      spotifyUrl: album.external_urls?.spotify,
+      image: cover,
+    });
+  });
+
+  return Array.from(seen.values());
+};
+
+export const getSpotifyArtist = async (name: string): Promise<SpotifyArtistResponse> => {
+  if (!name || !name.trim()) {
+    return { artist: null, albums: [] };
+  }
+
+  const token = await getSpotifyAccessToken();
+  const searchResponse = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+
+  if (!searchResponse.ok) {
+    throw new Error(`Spotify search error: ${searchResponse.status} ${searchResponse.statusText}`);
+  }
+
+  type SpotifySearchResponse = {
+    artists?: {
+      items?: Array<{
+        id?: string;
+        name?: string;
+        followers?: { total?: number };
+        popularity?: number;
+        genres?: string[];
+        external_urls?: { spotify?: string };
+        images?: Array<{ url?: string }>;
+      }>;
+    };
+  };
+
+  const searchData = (await searchResponse.json()) as SpotifySearchResponse;
+  const artistRaw = searchData.artists?.items?.[0];
+
+  if (!artistRaw || !artistRaw.id) {
+    return { artist: null, albums: [] };
+  }
+
+  const artistImage = artistRaw.images?.[0]?.url;
+
+  const artist: SpotifyArtistInfo = {
+    id: artistRaw.id,
+    name: artistRaw.name ?? '',
+    followers: artistRaw.followers?.total ?? 0,
+    popularity: artistRaw.popularity ?? 0,
+    genres: artistRaw.genres ?? [],
+    spotifyUrl: artistRaw.external_urls?.spotify,
+    image: artistImage,
+  };
+
+  const albumsResponse = await fetch(
+    `https://api.spotify.com/v1/artists/${artist.id}/albums?include_groups=album&limit=24&market=US`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+
+  let albums: SpotifyAlbumInfo[] = [];
+  if (albumsResponse.ok) {
+    const albumsData = (await albumsResponse.json()) as { items?: Array<any> };
+    albums = normaliseAlbumList(albumsData.items).slice(0, 8);
+  }
+
+  return { artist, albums };
 };
 
 type TicketmasterEventsResponse = {

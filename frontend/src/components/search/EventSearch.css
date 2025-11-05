@@ -434,7 +434,7 @@
 
 .result-card-title {
   margin: 0 0 4px 0;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #111827;
   line-height: 1.4;
@@ -442,7 +442,7 @@
 
 .result-card-venue {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
   color: #64748b;
   line-height: 1.4;
 }

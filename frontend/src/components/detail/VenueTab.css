@@ -1,0 +1,122 @@
+.venue-tab-container {
+	width: 100%;
+}
+
+.venue-tab-error {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 300px;
+}
+
+.venue-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 24px;
+	gap: 24px;
+}
+
+.venue-header-left {
+	flex: 1;
+}
+
+.venue-name {
+	font-size: 28px;
+	font-weight: 700;
+	color: #111827;
+	margin: 0 0 12px 0;
+}
+
+.venue-address-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: none;
+	border: none;
+	color: #2563eb;
+	font-size: 14px;
+	cursor: pointer;
+	padding: 0;
+	text-align: left;
+	transition: color 0.2s;
+}
+
+.venue-address-link:hover {
+	color: #1d4ed8;
+	text-decoration: underline;
+}
+
+.see-events-button {
+	padding: 10px 24px;
+	background-color: #000000;
+	color: #ffffff;
+	border: none;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background-color 0.2s;
+	flex-shrink: 0;
+}
+
+.see-events-button:hover {
+	background-color: #1a1a1a;
+}
+
+.venue-image-container {
+	margin-bottom: 32px;
+	background: #ffffff;
+	border-radius: 8px;
+	padding: 24px;
+	border: 1px solid #e5e7eb;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.venue-image {
+	max-width: 100%;
+	max-height: 400px;
+	object-fit: contain;
+	border-radius: 4px;
+}
+
+.venue-info-section {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+.venue-info-item {
+	background: #ffffff;
+	border-radius: 8px;
+	padding: 24px;
+	border: 1px solid #e5e7eb;
+}
+
+.venue-info-title {
+	font-size: 18px;
+	font-weight: 600;
+	color: #111827;
+	margin: 0 0 12px 0;
+}
+
+.venue-info-content {
+	font-size: 14px;
+	color: #374151;
+	line-height: 1.6;
+	margin: 0;
+	white-space: pre-wrap;
+}
+
+@media (max-width: 768px) {
+	.venue-header {
+		flex-direction: column;
+	}
+
+	.see-events-button {
+		width: 100%;
+	}
+}
+

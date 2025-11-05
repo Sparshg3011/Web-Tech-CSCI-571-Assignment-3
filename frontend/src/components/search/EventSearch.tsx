@@ -1,4 +1,5 @@
 import { useState, useEffect, type JSX } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { Event } from "../../types";
 import "./EventSearch.css";
 
@@ -18,9 +19,11 @@ type FormErrors = {
 };
 
 export const EventSearch = (): JSX.Element => {
+	const navigate = useNavigate();
+	const location = useLocation();
 	const [keyword, setKeyword] = useState("");
 	const [category, setCategory] = useState("All");
-	const [location, setLocation] = useState("");
+	const [locationInput, setLocationInput] = useState("");
 	const [autoDetect, setAutoDetect] = useState(false);
 	const [distance, setDistance] = useState("10");
 	const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -30,6 +33,20 @@ export const EventSearch = (): JSX.Element => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [hasSearched, setHasSearched] = useState(false);
+
+	// Restore state from navigation
+	useEffect(() => {
+		const searchState = location.state?.searchState;
+		if (searchState) {
+			setKeyword(searchState.keyword || "");
+			setCategory(searchState.category || "All");
+			setLocationInput(searchState.location || "");
+			setAutoDetect(searchState.autoDetect || false);
+			setDistance(searchState.distance || "10");
+			setResults(searchState.results || []);
+			setHasSearched(searchState.results?.length > 0);
+		}
+	}, [location.state]);
 
 	const clearError = (field: keyof FormErrors) => {
 		setErrors((prev) => {
@@ -48,7 +65,7 @@ export const EventSearch = (): JSX.Element => {
 			newErrors.keyword = "Please enter some keywords.";
 		}
 
-		if (!autoDetect && !location.trim()) {
+		if (!autoDetect && !locationInput.trim()) {
 			newErrors.location = "Location is required when auto-detect is disabled.";
 		}
 
@@ -75,7 +92,7 @@ export const EventSearch = (): JSX.Element => {
 			);
 			const data = await response.json();
 			if (data.city && data.region) {
-				setLocation(`${data.city}, ${data.region}`);
+				setLocationInput(`${data.city}, ${data.region}`);
 				clearError("location");
 			}
 		} catch (error) {
@@ -120,7 +137,7 @@ export const EventSearch = (): JSX.Element => {
 	};
 
 	const handleLocationChange = (value: string) => {
-		setLocation(value);
+		setLocationInput(value);
 		if (value.trim()) {
 			clearError("location");
 		}
@@ -193,7 +210,7 @@ export const EventSearch = (): JSX.Element => {
 
 		try {
 			// Geocode the location first
-			const coords = await geocodeLocation(location.trim());
+			const coords = await geocodeLocation(locationInput.trim());
 			if (!coords) {
 				setErrorMessage(
 					"Unable to find the specified location. Please try again."
@@ -332,7 +349,7 @@ export const EventSearch = (): JSX.Element => {
 						<input
 							id="location"
 							type="text"
-							value={location}
+							value={locationInput}
 							onChange={(e) => handleLocationChange(e.target.value)}
 							placeholder="Enter city, district or street..."
 							className={`form-input${errors.location ? " error" : ""}`}
@@ -424,9 +441,18 @@ export const EventSearch = (): JSX.Element => {
 								className="result-card"
 								role="listitem"
 								onClick={() => {
-									if (event.url) {
-										window.open(event.url, "_blank", "noopener,noreferrer");
-									}
+									navigate(`/event/${event.id}`, {
+										state: {
+											searchState: {
+												keyword,
+												category,
+												location: locationInput,
+												autoDetect,
+												distance,
+												results,
+											},
+										},
+									});
 								}}>
 								<div className="result-card-image">
 									<img
