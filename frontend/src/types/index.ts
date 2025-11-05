@@ -29,6 +29,9 @@ export interface EventDetail {
     };
     url?: string;
     image?: string;
+    parkingDetail?: string;
+    generalRule?: string;
+    childRule?: string;
   } | null;
   genres: string[];
   artists: Array<{

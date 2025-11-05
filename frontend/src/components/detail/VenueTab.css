@@ -24,33 +24,42 @@
 .venue-name {
 	font-size: 28px;
 	font-weight: 700;
-	color: #111827;
-	margin: 0 0 12px 0;
+	color: #1e3a8a;
+	margin: 0 0 8px 0;
 }
 
 .venue-address-link {
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	background: none;
 	border: none;
-	color: #2563eb;
+	color: #374151;
 	font-size: 14px;
 	cursor: pointer;
 	padding: 0;
 	text-align: left;
-	transition: color 0.2s;
+	transition: opacity 0.2s;
 }
 
 .venue-address-link:hover {
-	color: #1d4ed8;
-	text-decoration: underline;
+	opacity: 0.8;
+}
+
+.venue-address-link .external-link-icon {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	color: #374151;
 }
 
 .see-events-button {
-	padding: 10px 24px;
-	background-color: #000000;
-	color: #ffffff;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	background-color: #f3f4f6;
+	color: #374151;
 	border: none;
 	border-radius: 6px;
 	font-size: 14px;
@@ -61,28 +70,44 @@
 }
 
 .see-events-button:hover {
-	background-color: #1a1a1a;
+	background-color: #e5e7eb;
 }
 
-.venue-image-container {
-	margin-bottom: 32px;
+.see-events-button .external-link-icon {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	color: #374151;
+}
+
+.venue-content {
+	display: flex;
+	gap: 24px;
+	align-items: flex-start;
+	width: 100%;
+}
+
+.venue-logo-container {
 	background: #ffffff;
 	border-radius: 8px;
 	padding: 24px;
 	border: 1px solid #e5e7eb;
+	flex-shrink: 0;
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	min-width: 300px;
 }
 
-.venue-image {
+.venue-logo {
 	max-width: 100%;
-	max-height: 400px;
+	max-height: 300px;
 	object-fit: contain;
 	border-radius: 4px;
 }
 
 .venue-info-section {
+	flex: 1;
 	display: flex;
 	flex-direction: column;
 	gap: 24px;
@@ -91,14 +116,14 @@
 .venue-info-item {
 	background: #ffffff;
 	border-radius: 8px;
-	padding: 24px;
-	border: 1px solid #e5e7eb;
+	padding: 0;
+	border: none;
 }
 
 .venue-info-title {
 	font-size: 18px;
-	font-weight: 600;
-	color: #111827;
+	font-weight: 700;
+	color: #374151;
 	margin: 0 0 12px 0;
 }
 
@@ -110,12 +135,31 @@
 	white-space: pre-wrap;
 }
 
+.venue-link {
+	color: #1e3a8a;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.venue-link:hover {
+	color: #1e40af;
+}
+
 @media (max-width: 768px) {
 	.venue-header {
 		flex-direction: column;
 	}
 
 	.see-events-button {
+		width: 100%;
+	}
+
+	.venue-content {
+		flex-direction: column;
+	}
+
+	.venue-logo-container {
+		min-width: auto;
 		width: 100%;
 	}
 }

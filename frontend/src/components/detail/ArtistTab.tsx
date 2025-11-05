@@ -138,15 +138,17 @@ export const ArtistTab = ({ eventDetail }: ArtistTabProps): JSX.Element => {
 				<div className="artist-info">
 					<h2 className="artist-name">{artist.name}</h2>
 					<div className="artist-stats">
-						<p className="artist-followers">
-							Followers: {formatFollowers(artist.followers)}
-						</p>
-						<p className="artist-popularity">
-							Popularity: {formatPopularity(artist.popularity)}
-						</p>
+						<div className="artist-stats-row">
+							<p className="artist-followers">
+								Followers: {formatFollowers(artist.followers)}
+							</p>
+							<p className="artist-popularity">
+								Popularity: {formatPopularity(artist.popularity)}
+							</p>
+						</div>
 						{artist.genres && artist.genres.length > 0 && (
 							<p className="artist-genres">
-								Genre: {artist.genres.slice(0, 3).join(', ')}
+								Genres: {artist.genres.slice(0, 3).join(', ')}
 							</p>
 						)}
 					</div>

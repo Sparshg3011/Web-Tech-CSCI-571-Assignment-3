@@ -15,8 +15,7 @@
 .artist-info-card {
 	display: flex;
 	gap: 24px;
-	margin-bottom: 40px;
-	padding: 6px 4px 6px 0;
+	margin-bottom: 30px;
 }
 
 .artist-image {
@@ -32,17 +31,23 @@
 }
 
 .artist-name {
-	font-size: 24px;
+	font-size: 20px;
 	font-weight: 700;
 	color: #111827;
-	margin: 0 0 16px 0;
+	margin-bottom: 10px;
 }
 
 .artist-stats {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	margin-bottom: 20px;
+	margin-bottom: 10px;
+}
+
+.artist-stats-row {
+	display: flex;
+	flex-direction: row;
+	gap: 16px;
 }
 
 .artist-followers,
@@ -57,7 +62,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	padding: 10px 24px;
+	padding: 8px 10px;
 	background-color: #000000;
 	color: #ffffff;
 	border: none;
@@ -93,7 +98,7 @@
 
 .albums-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 	gap: 24px;
 }
 
@@ -115,19 +120,17 @@
 
 .album-image {
 	width: 100%;
-	aspect-ratio: 16 / 9;
 	object-fit: cover;
 }
 
 .album-info {
-	padding: 16px;
+	padding: 8px;
 }
 
 .album-name {
 	font-size: 14px;
 	font-weight: 600;
 	color: #111827;
-	margin: 0 0 8px 0;
 	line-height: 1.4;
 }
 
@@ -152,6 +155,11 @@
 		width: 100%;
 		max-width: 200px;
 		height: auto;
+	}
+
+	.artist-stats-row {
+		flex-direction: column;
+		gap: 8px;
 	}
 
 	.albums-grid {
