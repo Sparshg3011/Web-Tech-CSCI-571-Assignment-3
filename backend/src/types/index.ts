@@ -1,7 +1,8 @@
 export interface SearchParams {
   keyword: string;
   category: string;
-  location: string;
+  lat: number;
+  lng: number;
   distance: number;
 }
 
@@ -14,5 +15,46 @@ export interface Event {
   genre: string;
   image: string;
   url: string;
+}
+
+export interface EventDetail {
+  id: string;
+  name: string;
+  url: string;
+  date: string;
+  time: string;
+  status: string;
+  venue: {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    location?: {
+      latitude?: string;
+      longitude?: string;
+    };
+    url?: string;
+    image?: string;
+    generalRule?: string;
+    childRule?: string;
+    parkingDetail?: string;
+  } | null;
+  genres: string[];
+  artists: Array<{
+    name: string;
+    url?: string;
+    twitter?: string;
+    facebook?: string;
+    image?: string;
+  }>;
+  priceRanges: Array<{
+    type?: string;
+    currency?: string;
+    min?: number;
+    max?: number;
+  }>;
+  seatmapUrl?: string;
 }
 
