@@ -148,23 +148,87 @@
 
 @media (max-width: 768px) {
 	.artist-info-card {
-		flex-direction: column;
+		gap: 16px;
+		margin-bottom: 24px;
 	}
 
 	.artist-image {
-		width: 100%;
-		max-width: 200px;
-		height: auto;
+		width: 100px;
+		height: 100px;
+	}
+
+	.artist-name {
+		font-size: 18px;
+		margin-bottom: 8px;
+	}
+
+	.artist-stats {
+		gap: 6px;
+		margin-bottom: 8px;
 	}
 
 	.artist-stats-row {
-		flex-direction: column;
-		gap: 8px;
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+
+	.artist-followers,
+	.artist-popularity,
+	.artist-genres {
+		font-size: 13px;
+	}
+
+	.spotify-link-button {
+		padding: 7px 12px;
+		font-size: 13px;
+	}
+
+	.albums-section {
+		margin-top: 32px;
+	}
+
+	.albums-title {
+		font-size: 20px;
+		margin-bottom: 16px;
 	}
 
 	.albums-grid {
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		grid-template-columns: repeat(2, 1fr);
 		gap: 16px;
+	}
+
+	.album-info {
+		padding: 12px;
+	}
+
+	.album-name {
+		font-size: 13px;
+	}
+
+	.album-date,
+	.album-tracks {
+		font-size: 11px;
+	}
+}
+
+@media (max-width: 480px) {
+	.artist-image {
+		width: 90px;
+		height: 90px;
+	}
+
+	.artist-name {
+		font-size: 16px;
+	}
+
+	.artist-followers,
+	.artist-popularity,
+	.artist-genres {
+		font-size: 12px;
+	}
+
+	.albums-title {
+		font-size: 18px;
 	}
 }
 

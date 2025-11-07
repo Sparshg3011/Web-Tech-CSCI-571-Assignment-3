@@ -39,11 +39,6 @@
   border-color: #cbd5e1;
 }
 
-.favorite-button--active {
-  border-color: #ef4444;
-  background-color: #fee2e2;
-}
-
 .favorite-button--active .favorite-button-icon path {
   fill: #dc2626;
   stroke: #dc2626;

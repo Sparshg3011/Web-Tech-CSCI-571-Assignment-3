@@ -54,8 +54,18 @@ export const getEventDetails = async (req: Request, res: Response): Promise<void
     const detail = await eventService.getEventDetails(id as string);
     res.json(detail);
   } catch (error) {
-    console.error('Error fetching event details:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error fetching event details for ID:', req.params.id);
+    console.error('Error details:', error);
+    
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
 

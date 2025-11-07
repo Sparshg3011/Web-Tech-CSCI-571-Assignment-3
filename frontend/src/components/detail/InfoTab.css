@@ -13,10 +13,6 @@
 	.info-tab-content {
 		grid-template-columns: 1fr;
 	}
-	
-	.seatmap-section {
-		order: -1;
-	}
 }
 
 .info-details-card {
@@ -188,6 +184,59 @@
 @media (max-width: 1024px) {
 	.info-tab-content {
 		grid-template-columns: 1fr;
+		gap: 24px;
+	}
+}
+
+@media (max-width: 768px) {
+	.info-tab-content {
+		gap: 20px;
+	}
+
+	.info-row-label {
+		font-size: 10px;
+	}
+
+	.info-row-value {
+		font-size: 14px;
+	}
+
+	.ticket-status {
+		font-size: 11px;
+		padding: 3px 10px;
+	}
+
+	.info-link-button {
+		font-size: 12px;
+		padding: 5px 10px;
+	}
+
+	.share-button {
+		width: 32px;
+		height: 32px;
+	}
+
+	.seatmap-section {
+		padding: 16px;
+	}
+
+	.seatmap-title {
+		font-size: 10px;
+		margin-bottom: 8px;
+	}
+}
+
+@media (max-width: 480px) {
+	.info-rows {
+		gap: 12px;
+	}
+
+	.info-row-value {
+		font-size: 13px;
+	}
+
+	.share-buttons {
+		gap: 8px;
 	}
 }
 

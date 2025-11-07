@@ -24,7 +24,7 @@
 .venue-name {
 	font-size: 28px;
 	font-weight: 700;
-	color: #1e3a8a;
+	color: #000208;
 	margin: 0 0 8px 0;
 }
 
@@ -56,16 +56,17 @@
 .see-events-button {
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 6px;
 	padding: 8px 16px;
-	background-color: #f3f4f6;
-	color: #374151;
-	border: none;
+	background-color: #ffffff;
+	color: #000001;
+	border: 1px solid #e5e7eb;
 	border-radius: 6px;
 	font-size: 14px;
 	font-weight: 500;
 	cursor: pointer;
-	transition: background-color 0.2s;
+	transition: all 0.2s;
 	flex-shrink: 0;
 }
 
@@ -148,19 +149,65 @@
 @media (max-width: 768px) {
 	.venue-header {
 		flex-direction: column;
+		margin-bottom: 20px;
+		gap: 16px;
+	}
+
+	.venue-name {
+		font-size: 22px;
+		margin-bottom: 6px;
+	}
+
+	.venue-address-link {
+		font-size: 13px;
 	}
 
 	.see-events-button {
 		width: 100%;
+		padding: 7px 14px;
+		font-size: 13px;
 	}
 
 	.venue-content {
 		flex-direction: column;
+		gap: 20px;
 	}
 
 	.venue-logo-container {
 		min-width: auto;
 		width: 100%;
+		padding: 16px;
+	}
+
+	.venue-info-section {
+		gap: 20px;
+	}
+
+	.venue-info-title {
+		font-size: 16px;
+		margin-bottom: 10px;
+	}
+
+	.venue-info-content {
+		font-size: 13px;
+	}
+}
+
+@media (max-width: 480px) {
+	.venue-name {
+		font-size: 20px;
+	}
+
+	.venue-address-link {
+		font-size: 12px;
+	}
+
+	.venue-info-title {
+		font-size: 15px;
+	}
+
+	.venue-info-content {
+		font-size: 12px;
 	}
 }
 

@@ -1,4 +1,4 @@
-import { type JSX } from 'react';
+import { type JSX, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import './Header.css';
 
@@ -22,16 +22,49 @@ const HeartIcon = (): JSX.Element => (
 	</svg>
 );
 
+const HamburgerIcon = (): JSX.Element => (
+	<svg className="hamburger-icon" viewBox="0 0 24 24" aria-hidden="true">
+		<path
+			d="M3 12h18M3 6h18M3 18h18"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+		/>
+	</svg>
+);
+
+const CloseIcon = (): JSX.Element => (
+	<svg className="close-icon" viewBox="0 0 24 24" aria-hidden="true">
+		<path
+			d="M18 6L6 18M6 6l12 12"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+		/>
+	</svg>
+);
+
 export const Header = (): JSX.Element => {
 	const location = useLocation();
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const isSearch = location.pathname === '/search' || location.pathname.startsWith('/event/');
 	const isFavorites = location.pathname === '/favorites';
+
+	const toggleMobileMenu = () => {
+		setIsMobileMenuOpen(!isMobileMenuOpen);
+	};
+
+	const closeMobileMenu = () => {
+		setIsMobileMenuOpen(false);
+	};
 
 	return (
 		<header className="app-header">
 			<div className="header-content">
 				<h1 className="app-title">Events Around</h1>
-				<nav className="header-nav">
+				
+				{/* Desktop Navigation */}
+				<nav className="header-nav desktop-nav">
 					<Link
 						to="/search"
 						className={`nav-link ${isSearch ? 'active' : ''}`}>
@@ -45,7 +78,35 @@ export const Header = (): JSX.Element => {
 						<span>Favorites</span>
 					</Link>
 				</nav>
+
+				{/* Hamburger Menu Button */}
+				<button 
+					className="hamburger-button"
+					onClick={toggleMobileMenu}
+					aria-label="Toggle menu">
+					{isMobileMenuOpen ? <CloseIcon /> : <HamburgerIcon />}
+				</button>
 			</div>
+
+			{/* Mobile Navigation */}
+			{isMobileMenuOpen && (
+				<nav className="mobile-nav">
+					<Link
+						to="/search"
+						className={`nav-link ${isSearch ? 'active' : ''}`}
+						onClick={closeMobileMenu}>
+						<SearchIcon />
+						<span>Search</span>
+					</Link>
+					<Link
+						to="/favorites"
+						className={`nav-link ${isFavorites ? 'active' : ''}`}
+						onClick={closeMobileMenu}>
+						<HeartIcon />
+						<span>Favorites</span>
+					</Link>
+				</nav>
+			)}
 		</header>
 	);
 };

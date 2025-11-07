@@ -436,20 +436,27 @@ export const getEventDetails = async (id: string): Promise<EventDetail> => {
       throw new Error('Ticketmaster API key is missing');
     }
 
-    const response = await fetch(
-      createTicketmasterUrl(`/events/${id}`, {
-        apikey: TICKETMASTER_API_KEY,
-      })
-    );
+    const url = createTicketmasterUrl(`/events/${id}`, {
+      apikey: TICKETMASTER_API_KEY,
+    });
+
+    console.log('Fetching event details from Ticketmaster:', id);
+    
+    const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`Ticketmaster event detail error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text().catch(() => 'Unable to read error response');
+      console.error('Ticketmaster API error response:', errorText);
+      throw new Error(`Ticketmaster event detail error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = (await response.json()) as TicketmasterEventDetailResponse;
+    
     if (!data || !data.id) {
-      throw new Error('Event not found');
+      throw new Error('Event not found or invalid response from Ticketmaster');
     }
+
+    console.log('Successfully fetched event details for:', data.name);
 
     const detail: EventDetail = {
       id: data.id ?? '',
@@ -467,7 +474,11 @@ export const getEventDetails = async (id: string): Promise<EventDetail> => {
 
     return detail;
   } catch (error) {
-    console.error('Error in getEventDetails service:', error);
+    console.error('Error in getEventDetails service for ID:', id);
+    console.error('Error details:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+    }
     throw error;
   }
 };
