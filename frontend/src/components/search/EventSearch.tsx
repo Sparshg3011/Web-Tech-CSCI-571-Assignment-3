@@ -1,6 +1,16 @@
-import { useState, useEffect, type JSX } from "react";
+import {
+	useState,
+	useEffect,
+	useCallback,
+	useRef,
+	type JSX,
+	type MouseEvent as ReactMouseEvent,
+} from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import type { Event } from "../../types";
+import { toast } from "sonner";
+import type { Event, FavoriteEvent } from "../../types";
+import { useFavorites } from "../../context/FavoritesContext";
+import { EventCard } from "../shared/EventCard";
 import "./EventSearch.css";
 
 const SearchIcon = (): JSX.Element => (
@@ -8,6 +18,55 @@ const SearchIcon = (): JSX.Element => (
 		<path
 			d="M13.5 12.4a6 6 0 1 0-1.1 1.1l3.7 3.7a.8.8 0 0 0 1.1-1.1zM8.7 13a4.3 4.3 0 1 1 0-8.6 4.3 4.3 0 0 1 0 8.6Z"
 			fill="currentColor"
+		/>
+	</svg>
+);
+
+const ClearIcon = (): JSX.Element => (
+	<svg className="clear-icon" viewBox="0 0 16 16" aria-hidden="true">
+		<path
+			d="M4.22 4.22a.75.75 0 0 1 1.06 0L8 6.94l2.72-2.72a.75.75 0 1 1 1.06 1.06L9.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L8 9.06l-2.72 2.72a.75.75 0 0 1-1.06-1.06L6.94 8 4.22 5.28a.75.75 0 0 1 0-1.06Z"
+			fill="currentColor"
+		/>
+	</svg>
+);
+
+const ChevronDownIcon = (): JSX.Element => (
+	<svg className="chevron-icon" viewBox="0 0 16 16" aria-hidden="true">
+		<path
+			d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+			fill="currentColor"
+		/>
+	</svg>
+);
+
+const ChevronUpIcon = (): JSX.Element => (
+	<svg className="chevron-icon" viewBox="0 0 16 16" aria-hidden="true">
+		<path
+			d="M11.78 9.78a.75.75 0 0 1-1.06 0L8 7.06l-2.72 2.72a.75.75 0 1 1-1.06-1.06l3.25-3.25a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06Z"
+			fill="currentColor"
+		/>
+	</svg>
+);
+
+const EmptyStateIcon = (): JSX.Element => (
+	<svg className="empty-state-icon" viewBox="0 0 64 64" aria-hidden="true">
+		<circle
+			cx="28"
+			cy="28"
+			r="18"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="3"
+		/>
+		<line
+			x1="42"
+			y1="42"
+			x2="58"
+			y2="58"
+			stroke="currentColor"
+			strokeWidth="3"
+			strokeLinecap="round"
 		/>
 	</svg>
 );
@@ -33,6 +92,40 @@ export const EventSearch = (): JSX.Element => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [hasSearched, setHasSearched] = useState(false);
+	const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+	const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+	const [pendingFavoriteIds, setPendingFavoriteIds] = useState<Set<string>>(
+		() => new Set()
+	);
+	const suggestionRequestIdRef = useRef(0);
+	const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const lastSuggestionQueryRef = useRef<string>("");
+
+	const updatePendingFavorite = useCallback((id: string, pending: boolean) => {
+		setPendingFavoriteIds((prev) => {
+			const next = new Set(prev);
+			if (pending) {
+				next.add(id);
+			} else {
+				next.delete(id);
+			}
+			return next;
+		});
+	}, []);
+
+	const mapToEventPayload = useCallback(
+		(item: FavoriteEvent | Event): Event => ({
+			id: item.id,
+			name: item.name,
+			date: item.date,
+			time: item.time,
+			venue: item.venue,
+			genre: item.genre,
+			image: item.image,
+			url: item.url,
+		}),
+		[]
+	);
 
 	// Restore state from navigation
 	useEffect(() => {
@@ -100,39 +193,130 @@ export const EventSearch = (): JSX.Element => {
 		}
 	};
 
-	const fetchSuggestions = async (value: string) => {
-		if (value.length < 2) {
+	const fetchSuggestions = useCallback(async (value: string) => {
+		const trimmedValue = value.trim();
+
+		if (trimmedValue.length < 2) {
+			suggestionRequestIdRef.current += 1;
+			lastSuggestionQueryRef.current = "";
 			setSuggestions([]);
+			setShowSuggestions(false);
+			setIsFetchingSuggestions(false);
 			return;
 		}
+
+		if (trimmedValue === lastSuggestionQueryRef.current) {
+			return;
+		}
+
+		const currentRequestId = suggestionRequestIdRef.current + 1;
+		suggestionRequestIdRef.current = currentRequestId;
+		setIsFetchingSuggestions(true);
 
 		try {
 			const API_BASE_URL =
 				import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 			const response = await fetch(
 				`${API_BASE_URL}/events/suggestions?keyword=${encodeURIComponent(
-					value
+					trimmedValue
 				)}`
 			);
+
+			if (!response.ok) {
+				throw new Error(
+					`Suggestion API error: ${response.status} ${response.statusText}`
+				);
+			}
+
 			const data = await response.json();
-			setSuggestions(data.suggestions || []);
+			if (suggestionRequestIdRef.current === currentRequestId) {
+				const items = Array.isArray(data.suggestions) ? data.suggestions : [];
+				setSuggestions(items);
+				setShowSuggestions(items.length > 0);
+				lastSuggestionQueryRef.current = trimmedValue;
+			}
 		} catch (error) {
+			if (suggestionRequestIdRef.current === currentRequestId) {
+				setSuggestions([]);
+				setShowSuggestions(false);
+			}
 			console.error("Error fetching suggestions:", error);
+		} finally {
+			if (suggestionRequestIdRef.current === currentRequestId) {
+				setIsFetchingSuggestions(false);
+			}
 		}
-	};
+	}, [lastSuggestionQueryRef]);
+
+	const debouncedFetchSuggestions = useCallback(
+		(value: string) => {
+			if (debounceTimeoutRef.current) {
+				clearTimeout(debounceTimeoutRef.current);
+			}
+
+			debounceTimeoutRef.current = setTimeout(() => {
+				void fetchSuggestions(value);
+			}, 400);
+		},
+		[fetchSuggestions]
+	);
+
+	useEffect(() => {
+		return () => {
+			if (debounceTimeoutRef.current) {
+				clearTimeout(debounceTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	const handleKeywordChange = (value: string) => {
 		setKeyword(value);
-		fetchSuggestions(value);
-		setShowSuggestions(true);
-		if (value.trim()) {
+		const trimmedValue = value.trim();
+
+		if (trimmedValue.length >= 2) {
+			debouncedFetchSuggestions(value);
+		} else {
+			if (debounceTimeoutRef.current) {
+				clearTimeout(debounceTimeoutRef.current);
+				debounceTimeoutRef.current = null;
+			}
+			suggestionRequestIdRef.current += 1;
+			lastSuggestionQueryRef.current = "";
+			setSuggestions([]);
+			setShowSuggestions(false);
+			setIsFetchingSuggestions(false);
+		}
+
+		if (trimmedValue) {
 			clearError("keyword");
 		}
 	};
 
 	const handleSuggestionClick = (suggestion: string) => {
+		if (debounceTimeoutRef.current) {
+			clearTimeout(debounceTimeoutRef.current);
+			debounceTimeoutRef.current = null;
+		}
+		suggestionRequestIdRef.current += 1;
+		lastSuggestionQueryRef.current = suggestion.trim();
 		setKeyword(suggestion);
+		setSuggestions([]);
 		setShowSuggestions(false);
+		setIsFetchingSuggestions(false);
+		clearError("keyword");
+	};
+
+	const clearKeyword = () => {
+		suggestionRequestIdRef.current += 1;
+		lastSuggestionQueryRef.current = "";
+		setKeyword("");
+		setSuggestions([]);
+		setShowSuggestions(false);
+		setIsFetchingSuggestions(false);
+		if (debounceTimeoutRef.current) {
+			clearTimeout(debounceTimeoutRef.current);
+			debounceTimeoutRef.current = null;
+		}
 		clearError("keyword");
 	};
 
@@ -149,26 +333,6 @@ export const EventSearch = (): JSX.Element => {
 		if (value.trim() && !Number.isNaN(numericValue) && numericValue > 0) {
 			clearError("distance");
 		}
-	};
-
-	const fallbackImage = "https://via.placeholder.com/400x250?text=No+Image";
-
-	const formatCardDate = (event: Event): string => {
-		if (!event.date) {
-			return "Date TBD";
-		}
-		const base = `${event.date}T${event.time || "00:00:00"}`;
-		const date = new Date(base);
-		if (Number.isNaN(date.getTime())) {
-			return "Date TBD";
-		}
-		return new Intl.DateTimeFormat("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-			hour: "numeric",
-			minute: "2-digit",
-		}).format(date);
 	};
 
 	const geocodeLocation = async (
@@ -195,6 +359,60 @@ export const EventSearch = (): JSX.Element => {
 			return null;
 		}
 	};
+
+  const handleFavoriteToggle = useCallback(
+    async (
+      eventToToggle: Event,
+      _clickEvent?: ReactMouseEvent<HTMLButtonElement>
+    ) => {
+      if (pendingFavoriteIds.has(eventToToggle.id)) {
+        return;
+      }
+
+      updatePendingFavorite(eventToToggle.id, true);
+
+      try {
+        if (isFavorite(eventToToggle.id)) {
+          const removed = await removeFavorite(eventToToggle.id);
+          toast.info(`${eventToToggle.name} removed from favorites!`, {
+            action: {
+              label: "Undo",
+              onClick: async () => {
+                try {
+                  const payload = removed
+                    ? mapToEventPayload(removed)
+                    : mapToEventPayload(eventToToggle);
+                  await addFavorite(payload);
+                  toast.success(`${eventToToggle.name} re-added to favorites!`);
+                } catch (undoError) {
+                  console.error("Failed to undo favorite removal:", undoError);
+                  toast.error("Unable to undo. Please try again.");
+                }
+              },
+            },
+          });
+        } else {
+          await addFavorite(eventToToggle);
+          toast.success(`${eventToToggle.name} added to favorites!`, {
+            description: "You can view it in the Favorites page.",
+          });
+        }
+      } catch (error) {
+        console.error("Error updating favorites:", error);
+        toast.error("Unable to update favorites. Please try again.");
+      } finally {
+        updatePendingFavorite(eventToToggle.id, false);
+      }
+    },
+    [
+      pendingFavoriteIds,
+      updatePendingFavorite,
+      isFavorite,
+      removeFavorite,
+      mapToEventPayload,
+      addFavorite,
+    ]
+  );
 
 	const handleSearch = async () => {
 		if (!validateForm()) {
@@ -254,6 +472,8 @@ export const EventSearch = (): JSX.Element => {
 		setIsLoading(false);
 	};
 
+	const hasKeyword = keyword.trim().length > 0;
+
 	return (
 		<div className="event-search-container">
 			<div className="search-form">
@@ -263,34 +483,71 @@ export const EventSearch = (): JSX.Element => {
 						<label htmlFor="keyword">
 							Keywords <span className="required">*</span>
 						</label>
-						<div className="autocomplete-wrapper">
-							<input
-								id="keyword"
-								type="text"
-								value={keyword}
-								onChange={(e) => handleKeywordChange(e.target.value)}
-								onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-								onFocus={() => keyword && setShowSuggestions(true)}
-								placeholder="Search for events..."
-								className={`form-input${errors.keyword ? " error" : ""}`}
-								aria-invalid={Boolean(errors.keyword)}
-								aria-describedby={errors.keyword ? "keyword-error" : undefined}
-								autoComplete="off"
-							/>
-							{showSuggestions && suggestions.length > 0 && (
-								<ul className="suggestions-list" role="listbox">
-									{suggestions.map((suggestion, index) => (
-										<li
-											key={index}
-											onClick={() => handleSuggestionClick(suggestion)}
-											className="suggestion-item"
-											role="option">
-											{suggestion}
-										</li>
-									))}
-								</ul>
+					<div className="autocomplete-wrapper">
+						<input
+							id="keyword"
+							type="text"
+							value={keyword}
+							onChange={(e) => handleKeywordChange(e.target.value)}
+							onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+							onFocus={() => {
+								if (suggestions.length > 0) {
+									setShowSuggestions(true);
+								}
+							}}
+							placeholder="Search for events..."
+							className={`form-input autocomplete-input${errors.keyword ? " error" : ""}`}
+							aria-invalid={Boolean(errors.keyword)}
+							aria-describedby={errors.keyword ? "keyword-error" : undefined}
+							autoComplete="off"
+							aria-busy={isFetchingSuggestions}
+						/>
+						<div className="autocomplete-end-control">
+							{hasKeyword ? (
+								<>
+									<button
+										type="button"
+										onClick={clearKeyword}
+										className="clear-input-btn"
+										aria-label="Clear keyword input">
+										<ClearIcon />
+									</button>
+									{isFetchingSuggestions ? (
+										<span
+											className="suggestions-spinner"
+											role="status"
+											aria-label="Loading suggestions"
+										/>
+									) : (
+										<span className="dropdown-arrow" aria-hidden="true">
+											{showSuggestions && suggestions.length > 0 ? (
+												<ChevronUpIcon />
+											) : (
+												<ChevronDownIcon />
+											)}
+										</span>
+									)}
+								</>
+							) : (
+								<span className="dropdown-arrow" aria-hidden="true">
+									<ChevronDownIcon />
+								</span>
 							)}
 						</div>
+						{showSuggestions && suggestions.length > 0 && (
+							<ul className="suggestions-list" role="listbox">
+								{suggestions.map((suggestion, index) => (
+									<li
+										key={index}
+										onClick={() => handleSuggestionClick(suggestion)}
+										className="suggestion-item"
+										role="option">
+										{suggestion}
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
 						<div className="error-container">
 							{errors.keyword && (
 								<p id="keyword-error" className="error-message">
@@ -413,7 +670,9 @@ export const EventSearch = (): JSX.Element => {
 			<div className="results-section">
 				{!hasSearched && !isLoading ? (
 					<div className="empty-state">
-						<div className="empty-icon">🔍</div>
+						<div className="empty-icon">
+							<EmptyStateIcon />
+						</div>
 						<p className="empty-message">
 							Enter search criteria and click the Search button to find events.
 						</p>
@@ -435,55 +694,31 @@ export const EventSearch = (): JSX.Element => {
 
 				{!isLoading && !errorMessage && results.length > 0 ? (
 					<div className="results-grid" role="list">
-						{results.map((event) => (
-							<div
-								key={event.id}
-								className="result-card"
-								role="listitem"
-								onClick={() => {
-									navigate(`/event/${event.id}`, {
-										state: {
-											searchState: {
-												keyword,
-												category,
-												location: locationInput,
-												autoDetect,
-												distance,
-												results,
-											},
-										},
-									});
-								}}>
-								<div className="result-card-image">
-									<img
-										src={event.image || fallbackImage}
-										alt={event.name}
-										loading="lazy"
-									/>
-									<div className="result-card-overlay">
-										<span className="result-card-badge">
-											{event.genre || "Miscellaneous"}
-										</span>
-										<span className="result-card-date">
-											{formatCardDate(event)}
-										</span>
-									</div>
-								</div>
-								<div className="result-card-body">
-									<div className="result-card-body-content">
-										<h3 className="result-card-title">{event.name}</h3>
-										<p className="result-card-venue">
-											{event.venue || "Venue TBD"}
-										</p>
-									</div>
-									<div className="result-card-footer">
-										<span className="result-card-heart" aria-hidden="true">
-											♡
-										</span>
-									</div>
-								</div>
-							</div>
-						))}
+        {results.map((eventItem) => (
+          <EventCard
+            key={eventItem.id}
+            event={eventItem}
+            isFavorite={isFavorite(eventItem.id)}
+            disabled={pendingFavoriteIds.has(eventItem.id)}
+            onFavoriteToggle={(eventToToggle, clickEvent) => {
+              void handleFavoriteToggle(eventToToggle, clickEvent);
+            }}
+            onSelect={(selectedEvent) => {
+              navigate(`/event/${selectedEvent.id}`, {
+                state: {
+                  searchState: {
+                    keyword,
+                    category,
+                    location: locationInput,
+                    autoDetect,
+                    distance,
+                    results,
+                  },
+                },
+              });
+            }}
+          />
+        ))}
 					</div>
 				) : null}
 

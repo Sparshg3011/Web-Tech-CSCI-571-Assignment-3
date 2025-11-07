@@ -103,38 +103,6 @@
 	background-color: #1a1a1a;
 }
 
-.favorite-button {
-	background: #ffffff;
-	border: 1px solid #e2e8f0;
-	border-radius: 8px;
-	width: 40px;
-	height: 40px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	font-size: 20px;
-	transition: all 0.2s;
-	padding: 0;
-}
-
-.favorite-button:hover {
-	border-color: #cbd5e1;
-}
-
-.favorite-button.favorited {
-	border-color: #ef4444;
-	background-color: #ffffff;
-}
-
-.favorite-button.favorited::before {
-	content: '❤️';
-}
-
-.favorite-button:not(.favorited)::before {
-	content: '♡';
-}
-
 .event-detail-title {
 	font-size: 32px;
 	font-weight: 700;

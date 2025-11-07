@@ -1,0 +1,57 @@
+.favorite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #1f2937;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+
+.favorite-button:focus-visible {
+  outline: 2px solid rgba(239, 68, 68, 0.4);
+  outline-offset: 2px;
+}
+
+.favorite-button--card {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.favorite-button--detail {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.favorite-button-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+
+.favorite-button:hover:not(.favorite-button--disabled) {
+  border-color: #cbd5e1;
+}
+
+.favorite-button--active {
+  border-color: #ef4444;
+  background-color: #fee2e2;
+}
+
+.favorite-button--active .favorite-button-icon path {
+  fill: #dc2626;
+  stroke: #dc2626;
+}
+
+.favorite-button--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+

@@ -1,28 +1,45 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useState, type JSX, type MouseEvent as ReactMouseEvent } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Toaster, toast } from 'sonner';
-import type { EventDetail as EventDetailType } from '../../types';
+import { toast } from 'sonner';
+import { useFavorites } from '../../context/FavoritesContext';
+import type { EventDetail as EventDetailType, Event, FavoriteEvent } from '../../types';
+import { FavoriteButton } from '../shared/FavoriteButton';
 import './EventDetail.css';
 import { InfoTab } from './InfoTab';
 import { ArtistTab } from './ArtistTab';
 import { VenueTab } from './VenueTab';
 
+const mapDetailToEvent = (detail: EventDetailType): Event => ({
+  id: detail.id,
+  name: detail.name,
+  date: detail.date ?? '',
+  time: detail.time ?? '',
+  venue: detail.venue?.name ?? '',
+  genre: detail.genres[0] ?? 'Miscellaneous',
+  image: detail.venue?.image ?? '',
+  url: detail.url ?? '',
+});
+
+const mapFavoriteToEvent = (favorite: FavoriteEvent): Event => ({
+  id: favorite.id,
+  name: favorite.name,
+  date: favorite.date,
+  time: favorite.time,
+  venue: favorite.venue,
+  genre: favorite.genre,
+  image: favorite.image,
+  url: favorite.url,
+});
+
 export const EventDetail = (): JSX.Element => {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const { isFavorite, addFavorite, removeFavorite } = useFavorites();
 	const [eventDetail, setEventDetail] = useState<EventDetailType | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState<'info' | 'artist' | 'venue'>('info');
-	const [isFavorited, setIsFavorited] = useState(false);
-
-	// Check if event is favorited
-	useEffect(() => {
-		if (id) {
-			const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-			setIsFavorited(favorites.some((fav: { id: string }) => fav.id === id));
-		}
-	}, [id]);
+	const [favoritePending, setFavoritePending] = useState(false);
 
 	// Fetch event details
 	useEffect(() => {
@@ -70,47 +87,55 @@ export const EventDetail = (): JSX.Element => {
 		}
 	};
 
-	const handleFavoriteClick = () => {
-		if (!eventDetail || !id) return;
+	const handleFavoriteToggle = async (
+		clickEvent: ReactMouseEvent<HTMLButtonElement>
+	): Promise<void> => {
+		clickEvent.preventDefault();
+		clickEvent.stopPropagation();
 
-		const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+		if (!eventDetail || !id || favoritePending) {
+			return;
+		}
 
-		if (isFavorited) {
-			// Remove from favorites
-			const updatedFavorites = favorites.filter(
-				(fav: { id: string }) => fav.id !== id
-			);
-			localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-			setIsFavorited(false);
-			toast.info(`${eventDetail.name} removed from favorites!`, {
-				action: {
-					label: 'Undo',
-					onClick: () => {
-						localStorage.setItem('favorites', JSON.stringify(favorites));
-						setIsFavorited(true);
+		setFavoritePending(true);
+
+		const payload = mapDetailToEvent(eventDetail);
+
+		try {
+			if (isFavorite(id)) {
+				const removed = await removeFavorite(id);
+				toast.info(`${eventDetail.name} removed from favorites!`, {
+					action: {
+						label: 'Undo',
+						onClick: async () => {
+							try {
+								const undoPayload = removed
+									? mapFavoriteToEvent(removed)
+									: payload;
+								await addFavorite(undoPayload);
+								toast.success(`${eventDetail.name} re-added to favorites!`);
+							} catch (undoError) {
+								console.error('Failed to undo favorite removal:', undoError);
+								toast.error('Unable to undo. Please try again.');
+							}
+						},
 					},
-				},
-			});
-		} else {
-			// Add to favorites
-			const eventCard = {
-				id: eventDetail.id,
-				name: eventDetail.name,
-				date: eventDetail.date,
-				time: eventDetail.time,
-				venue: eventDetail.venue?.name || '',
-				genre: eventDetail.genres[0] || 'Miscellaneous',
-				image: eventDetail.venue?.image || '',
-				url: eventDetail.url,
-			};
-			favorites.push(eventCard);
-			localStorage.setItem('favorites', JSON.stringify(favorites));
-			setIsFavorited(true);
-			toast.success(`${eventDetail.name} added to favorites!`, {
-				description: 'You can view it in the Favorites page.',
-			});
+				});
+			} else {
+				await addFavorite(payload);
+				toast.success(`${eventDetail.name} added to favorites!`, {
+					description: 'You can view it in the Favorites page.',
+				});
+			}
+		} catch (error) {
+			console.error('Error updating favorite status:', error);
+			toast.error('Unable to update favorites. Please try again.');
+		} finally {
+			setFavoritePending(false);
 		}
 	};
+
+	const isFavorited = id ? isFavorite(id) : false;
 
 	const handleBuyTickets = () => {
 		if (eventDetail?.url) {
@@ -148,7 +173,6 @@ export const EventDetail = (): JSX.Element => {
 
 	return (
 		<div className="event-detail-container">
-			<Toaster position="top-right" />
 			<div className="event-detail-header">
 				<button onClick={handleBackClick} className="back-to-search">
 					← Back to Search
@@ -158,45 +182,48 @@ export const EventDetail = (): JSX.Element => {
 			<div className="event-detail-title-row">
 				<h1 className="event-detail-title">{eventDetail.name}</h1>
 				<div className="event-detail-title-actions">
-					<button
-						onClick={handleBuyTickets}
-						className="buy-tickets-button">
-						Buy Tickets
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 16 16"
-							fill="none"
-							xmlns="http://www.w3.org/2000/svg"
-							className="external-link-icon">
-							<path
-								d="M10 2H14V6"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							/>
-							<path
-								d="M6 10L14 2"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							/>
-							<path
-								d="M12 9V14H2V4H7"
-								stroke="currentColor"
-								strokeWidth="1.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							/>
-						</svg>
-					</button>
-					<button
-						onClick={handleFavoriteClick}
-						className={`favorite-button ${isFavorited ? 'favorited' : ''}`}
-						aria-label="Favorite"
-					/>
+				<button
+					onClick={handleBuyTickets}
+					className="buy-tickets-button">
+					Buy Tickets
+					<svg
+						width="16"
+						height="16"
+						viewBox="0 0 16 16"
+						fill="none"
+						xmlns="http://www.w3.org/2000/svg"
+						className="external-link-icon">
+						<path
+							d="M10 2H14V6"
+							stroke="currentColor"
+							strokeWidth="1.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						/>
+						<path
+							d="M6 10L14 2"
+							stroke="currentColor"
+							strokeWidth="1.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						/>
+						<path
+							d="M12 9V14H2V4H7"
+							stroke="currentColor"
+							strokeWidth="1.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						/>
+					</svg>
+				</button>
+				<FavoriteButton
+					variant="detail"
+					isActive={isFavorited}
+					disabled={favoritePending}
+					onToggle={(clickEvent) => {
+						void handleFavoriteToggle(clickEvent);
+					}}
+				/>
 				</div>
 			</div>
 

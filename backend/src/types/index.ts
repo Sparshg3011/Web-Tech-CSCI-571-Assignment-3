@@ -82,3 +82,18 @@ export interface SpotifyArtistResponse {
   albums: SpotifyAlbumInfo[];
 }
 
+export interface FavoriteEventPayload {
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  venue: string;
+  genre: string;
+  image: string;
+  url: string;
+}
+
+export interface FavoriteEvent extends FavoriteEventPayload {
+  createdAt: string;
+}
+

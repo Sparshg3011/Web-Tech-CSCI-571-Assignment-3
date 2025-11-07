@@ -9,6 +9,10 @@ export interface Event {
   url: string;
 }
 
+export interface FavoriteEvent extends Event {
+  createdAt: string;
+}
+
 export interface EventDetail {
   id: string;
   name: string;

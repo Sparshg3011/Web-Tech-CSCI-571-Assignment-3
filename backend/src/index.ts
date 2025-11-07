@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import routes from './routes';
+import { connectToDatabase } from './database/connection';
 
 dotenv.config();
 
@@ -22,7 +23,19 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+const startServer = async (): Promise<void> => {
+  try {
+    await connectToDatabase();
+    console.log('Connected to MongoDB');
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 

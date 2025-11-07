@@ -24,3 +24,69 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Sonner Toast Styles */
+[data-sonner-toaster] {
+  font-family: inherit !important;
+}
+
+[data-sonner-toast] {
+  background-color: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  color: #333333 !important;
+  font-size: 14px !important;
+  padding: 16px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-sonner-toast][data-type="success"],
+[data-sonner-toast][data-type="info"],
+[data-sonner-toast][data-type="error"],
+[data-sonner-toast][data-type="warning"] {
+  background-color: #ffffff !important;
+  color: #333333 !important;
+}
+
+/* Toast title/message text */
+[data-sonner-toast] [data-title] {
+  color: #333333 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+/* Toast description text */
+[data-sonner-toast] [data-description] {
+  color: #666666 !important;
+  font-size: 13px !important;
+}
+
+/* Toast icon styling */
+[data-sonner-toast] [data-icon] {
+  color: #333333 !important;
+}
+
+[data-sonner-toast] [data-icon] svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Close button */
+[data-sonner-toast] [data-close-button] {
+  display: none !important;
+}
+
+/* Action button (like "Undo") */
+[data-sonner-toast] [data-button] {
+  background-color: #000000 !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+
+[data-sonner-toast] [data-button]:hover {
+  background-color: #333333 !important;
+}

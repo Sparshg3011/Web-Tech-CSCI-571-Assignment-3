@@ -93,12 +93,6 @@ export const InfoTab = ({ eventDetail }: InfoTabProps): JSX.Element => {
 		}
 	};
 
-	const handleBuyTickets = () => {
-		if (eventDetail.url) {
-			window.open(eventDetail.url, '_blank', 'noopener,noreferrer');
-		}
-	};
-
 	return (
 		<div className="info-tab-container">
 			<div className="info-tab-content">
