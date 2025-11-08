@@ -5,6 +5,7 @@ import type {
 	SpotifyArtistInfo,
 	SpotifyArtistResponse,
 } from '../../types';
+import { API_BASE_URL } from '../../services/api';
 import './ArtistTab.css';
 
 interface ArtistTabProps {
@@ -41,8 +42,6 @@ export const ArtistTab = ({ eventDetail }: ArtistTabProps): JSX.Element => {
 			try {
 				setArtistData((prev) => ({ ...prev, isLoading: true, error: null }));
 
-				const API_BASE_URL =
-					import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 				const artistName = eventDetail.artists[0].name;
 				const response = await fetch(
 					`${API_BASE_URL}/events/spotify/artist?name=${encodeURIComponent(artistName)}`

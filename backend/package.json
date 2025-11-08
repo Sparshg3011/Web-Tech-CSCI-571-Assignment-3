@@ -4,9 +4,12 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
+    "build:frontend": "node ./scripts/prepare-frontend.js",
+    "build:server": "tsc",
+    "build": "npm run build:frontend && npm run build:server",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "npm run build"
   },
   "keywords": [],
   "author": "",

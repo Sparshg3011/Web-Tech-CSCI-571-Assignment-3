@@ -1,4 +1,14 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const resolveApiBaseUrl = (): string => {
+  const raw = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+
+  if (raw && raw.length > 0) {
+    return raw.replace(/\/$/, '');
+  }
+
+  return '/api';
+};
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const api = {
   async get<T>(endpoint: string): Promise<T> {

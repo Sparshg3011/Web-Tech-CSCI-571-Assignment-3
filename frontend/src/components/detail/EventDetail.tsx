@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useFavorites } from '../../context/FavoritesContext';
 import type { EventDetail as EventDetailType, Event, FavoriteEvent } from '../../types';
 import { FavoriteButton } from '../shared/FavoriteButton';
+import { API_BASE_URL } from '../../services/api';
 import './EventDetail.css';
 import { InfoTab } from './InfoTab';
 import { ArtistTab } from './ArtistTab';
@@ -51,8 +52,6 @@ export const EventDetail = (): JSX.Element => {
 
 			try {
 				setIsLoading(true);
-				const API_BASE_URL =
-					import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 				const response = await fetch(`${API_BASE_URL}/events/${id}`);
 
 				if (!response.ok) {

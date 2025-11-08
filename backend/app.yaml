@@ -1,0 +1,13 @@
+runtime: nodejs20
+instance_class: F1
+entrypoint: npm start
+
+env_variables:
+  NODE_ENV: 'production'
+  PORT: '8080'
+  TM_API_KEY: '572BZ6gZglohLApXMqHdsiDifhesbmTL'
+  SPOTIFY_CLIENT_ID: '2ece26ba0e934b6d92ee858a36289118'
+  SPOTIFY_CLIENT_SECRET: '5428f67ee5a443dc9db24b2078201e8b'
+  MONGODB_URI: 'mongodb+srv://sparshg3011:idneO0lt5inFnxOk@cluster0.yxkorhq.mongodb.net/?appName=Cluster0'
+
+

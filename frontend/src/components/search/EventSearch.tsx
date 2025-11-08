@@ -11,7 +11,14 @@ import { toast } from "sonner";
 import type { Event, FavoriteEvent } from "../../types";
 import { useFavorites } from "../../context/FavoritesContext";
 import { EventCard } from "../shared/EventCard";
+import { API_BASE_URL } from "../../services/api";
 import "./EventSearch.css";
+
+const GOOGLE_GEOCODING_API_KEY =
+	(import.meta.env.VITE_GOOGLE_GEOCODING_API_KEY as string | undefined)?.trim() ??
+	"";
+const IPINFO_TOKEN =
+	(import.meta.env.VITE_IPINFO_TOKEN as string | undefined)?.trim() ?? "";
 
 const SearchIcon = (): JSX.Element => (
 	<svg className="btn-icon" viewBox="0 0 20 20" aria-hidden="true">
@@ -178,8 +185,14 @@ export const EventSearch = (): JSX.Element => {
 	}, [autoDetect]);
 
 	const fetchUserLocation = async () => {
+		if (!IPINFO_TOKEN) {
+			console.warn(
+				"IPinfo token missing. Set VITE_IPINFO_TOKEN in your frontend environment."
+			);
+			return;
+		}
+
 		try {
-			const IPINFO_TOKEN = "f0b684f9b41094";
 			const response = await fetch(
 				`https://ipinfo.io/json?token=${IPINFO_TOKEN}`
 			);
@@ -214,8 +227,6 @@ export const EventSearch = (): JSX.Element => {
 		setIsFetchingSuggestions(true);
 
 		try {
-			const API_BASE_URL =
-				import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 			const response = await fetch(
 				`${API_BASE_URL}/events/suggestions?keyword=${encodeURIComponent(
 					trimmedValue
@@ -339,13 +350,16 @@ export const EventSearch = (): JSX.Element => {
 		locationStr: string
 	): Promise<{ lat: number; lng: number } | null> => {
 		try {
-			const GOOGLE_API_KEY =
-				import.meta.env.VITE_GOOGLE_API_KEY ||
-				"AIzaSyDxim2lRaUCInmHiz-gN-jmPPgc030Bdyg";
+			if (!GOOGLE_GEOCODING_API_KEY) {
+				console.warn(
+					"Google Geocoding API key missing. Set VITE_GOOGLE_GEOCODING_API_KEY in your frontend environment."
+				);
+				return null;
+			}
 			const response = await fetch(
 				`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
 					locationStr
-				)}&key=${GOOGLE_API_KEY}`
+				)}&key=${GOOGLE_GEOCODING_API_KEY}`
 			);
 			const data = await response.json();
 
@@ -437,8 +451,6 @@ export const EventSearch = (): JSX.Element => {
 				return;
 			}
 
-			const API_BASE_URL =
-				import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 			const params = new URLSearchParams({
 				keyword: keyword.trim(),
 				category,
