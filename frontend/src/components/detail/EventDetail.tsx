@@ -77,11 +77,11 @@ export const EventDetail = (): JSX.Element => {
 		if (searchState) {
 			// Navigate back to search with preserved state
 			navigate('/search', { 
-				state: searchState,
+				state: { searchState },
 				replace: false 
 			});
 		} else {
-			// Navigate to empty search page
+			// Navigate to empty search page (e.g., when coming from favorites)
 			navigate('/search');
 		}
 	};

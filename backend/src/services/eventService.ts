@@ -20,6 +20,53 @@ const rawSpotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET || '';
 const SPOTIFY_CLIENT_ID = rawSpotifyClientId.replace(/^['"]|['"]$/g, '').trim();
 const SPOTIFY_CLIENT_SECRET = rawSpotifyClientSecret.replace(/^['"]|['"]$/g, '').trim();
 
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const RATE_LIMIT_INTERVAL_MS = 250;
+let ticketmasterRateLimitQueue: Promise<void> = Promise.resolve();
+let lastTicketmasterRequestTimestamp = 0;
+
+const scheduleTicketmasterRequest = (): Promise<void> => {
+  ticketmasterRateLimitQueue = ticketmasterRateLimitQueue.then(async () => {
+    const now = Date.now();
+    const elapsed = now - lastTicketmasterRequestTimestamp;
+    const waitTime = Math.max(RATE_LIMIT_INTERVAL_MS - elapsed, 0);
+
+    if (waitTime > 0) {
+      await delay(waitTime);
+    }
+
+    lastTicketmasterRequestTimestamp = Date.now();
+  });
+
+  return ticketmasterRateLimitQueue;
+};
+
+const fetchTicketmaster = async (
+  url: string,
+  init?: RequestInit,
+  attempt = 1
+): Promise<Response> => {
+  await scheduleTicketmasterRequest();
+  const response = await fetch(url, init);
+
+  if (response.status === 429 && attempt < 3) {
+    const retryAfterHeader = response.headers.get('Retry-After');
+    const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : NaN;
+    const backoffMs = Number.isFinite(retryAfterSeconds)
+      ? retryAfterSeconds * 1000
+      : RATE_LIMIT_INTERVAL_MS * attempt * 2;
+
+    await delay(backoffMs);
+    return fetchTicketmaster(url, init, attempt + 1);
+  }
+
+  return response;
+};
+
 type SpotifyTokenCache = {
   token: string;
   expiresAt: number;
@@ -278,7 +325,7 @@ export const searchEvents = async (params: SearchParams): Promise<Event[]> => {
       query.classificationName = category;
     }
 
-    const response = await fetch(createTicketmasterUrl('/events.json', query));
+    const response = await fetchTicketmaster(createTicketmasterUrl('/events.json', query));
 
     if (!response.ok) {
       throw new Error(`Ticketmaster events API error: ${response.status} ${response.statusText}`);
@@ -312,7 +359,7 @@ export const getSuggestions = async (keyword: string): Promise<string[]> => {
       throw new Error('Ticketmaster API key is missing');
     }
 
-    const response = await fetch(
+    const response = await fetchTicketmaster(
       createTicketmasterUrl('/suggest', {
         apikey: TICKETMASTER_API_KEY,
         keyword,
@@ -442,7 +489,7 @@ export const getEventDetails = async (id: string): Promise<EventDetail> => {
 
     console.log('Fetching event details from Ticketmaster:', id);
     
-    const response = await fetch(url);
+    const response = await fetchTicketmaster(url);
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unable to read error response');

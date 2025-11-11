@@ -1,0 +1,77 @@
+Prompt: "Create a service function addFavorite that saves a favorite event to MongoDB using the FavoriteModel. It should accept a FavoriteEventPayload and return a FavoriteEvent with a created flag."
+
+Code:
+```typescript
+export const addFavorite = async (
+  payload: FavoriteEventPayload
+): Promise<{ favorite: FavoriteEvent; created: boolean }> => {
+  const favoriteDoc = await FavoriteModel.create({
+    eventId: payload.id,
+    name: payload.name,
+    date: payload.date,
+    time: payload.time,
+    venue: payload.venue,
+    genre: payload.genre,
+    image: payload.image,
+    url: payload.url,
+  });
+
+  const favorite = favoriteDoc.toObject() as FavoriteRecord;
+
+  return { favorite: toFavoriteEvent(favorite), created: true };
+};
+```
+
+Prompt: "The addFavorite function throws an error when trying to add a duplicate event (same eventId). Update it to check if the favorite already exists. If it exists, update the existing record with the new payload data and return created: false. If it doesn't exist, create a new one and return created: true."
+
+Code:
+```typescript
+export const addFavorite = async (
+  payload: FavoriteEventPayload
+): Promise<{ favorite: FavoriteEvent; created: boolean }> => {
+  const existing = await FavoriteModel.findOne({ eventId: payload.id }).lean().exec();
+
+  if (existing) {
+    const updated = await FavoriteModel.findOneAndUpdate(
+      { eventId: payload.id },
+      {
+        name: payload.name,
+        date: payload.date,
+        time: payload.time,
+        venue: payload.venue,
+        genre: payload.genre,
+        image: payload.image,
+        url: payload.url,
+      },
+      { new: true }
+    ).lean().exec();
+
+    if (!updated) {
+      throw new Error('Failed to update existing favorite');
+    }
+
+    return { favorite: toFavoriteEvent(updated as FavoriteRecord), created: false };
+  }
+
+  const favoriteDoc = await FavoriteModel.create({
+    eventId: payload.id,
+    name: payload.name,
+    date: payload.date,
+    time: payload.time,
+    venue: payload.venue,
+    genre: payload.genre,
+    image: payload.image,
+    url: payload.url,
+  });
+
+  const favorite = favoriteDoc.toObject() as FavoriteRecord;
+
+  return { favorite: toFavoriteEvent(favorite), created: true };
+};
+```
+
+Explanation: 
+Enhanced addFavorite to handle duplicate favorites gracefully. 
+Instead of throwing database errors, it now checks for existing favorites by eventId. 
+If found, it updates the record with fresh data and returns created: false. 
+This prevents duplicate key violations, keeps favorite data current, and provides clear feedback about whether a new favorite was created or an existing one was updated.

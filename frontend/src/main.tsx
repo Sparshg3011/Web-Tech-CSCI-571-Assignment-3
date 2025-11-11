@@ -8,7 +8,14 @@ import { FavoritesProvider } from './context/FavoritesContext';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <FavoritesProvider>
-      <Toaster position="top-right" richColors expand closeButton />
+      <Toaster 
+        position="top-right" 
+        richColors 
+        closeButton 
+        toastOptions={{
+          duration: 4000,
+        }}
+      />
       <App />
     </FavoritesProvider>
   </StrictMode>,

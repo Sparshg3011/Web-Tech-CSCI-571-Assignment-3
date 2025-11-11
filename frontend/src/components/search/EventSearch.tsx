@@ -145,6 +145,14 @@ export const EventSearch = (): JSX.Element => {
 			setDistance(searchState.distance || "10");
 			setResults(searchState.results || []);
 			setHasSearched(searchState.results?.length > 0);
+			
+			// Restore scroll position
+			if (searchState.scrollPosition !== undefined) {
+				// Use requestAnimationFrame to ensure DOM is updated
+				requestAnimationFrame(() => {
+					window.scrollTo(0, searchState.scrollPosition);
+				});
+			}
 		}
 	}, [location.state]);
 
@@ -209,7 +217,7 @@ export const EventSearch = (): JSX.Element => {
 	const fetchSuggestions = useCallback(async (value: string) => {
 		const trimmedValue = value.trim();
 
-		if (trimmedValue.length < 2) {
+		if (trimmedValue.length < 1) {
 			suggestionRequestIdRef.current += 1;
 			lastSuggestionQueryRef.current = "";
 			setSuggestions([]);
@@ -242,14 +250,21 @@ export const EventSearch = (): JSX.Element => {
 			const data = await response.json();
 			if (suggestionRequestIdRef.current === currentRequestId) {
 				const items = Array.isArray(data.suggestions) ? data.suggestions : [];
-				setSuggestions(items);
-				setShowSuggestions(items.length > 0);
+				// Add user's input as the first option, followed by unique API suggestions
+				const userInput = trimmedValue;
+				const uniqueSuggestions = items.filter(
+					(item: string) => item.toLowerCase() !== userInput.toLowerCase()
+				);
+				const allSuggestions = [userInput, ...uniqueSuggestions];
+				setSuggestions(allSuggestions);
+				setShowSuggestions(allSuggestions.length > 0);
 				lastSuggestionQueryRef.current = trimmedValue;
 			}
 		} catch (error) {
 			if (suggestionRequestIdRef.current === currentRequestId) {
-				setSuggestions([]);
-				setShowSuggestions(false);
+				// Still show user's input even if API fails
+				setSuggestions([trimmedValue]);
+				setShowSuggestions(true);
 			}
 			console.error("Error fetching suggestions:", error);
 		} finally {
@@ -284,7 +299,7 @@ export const EventSearch = (): JSX.Element => {
 		setKeyword(value);
 		const trimmedValue = value.trim();
 
-		if (trimmedValue.length >= 2) {
+		if (trimmedValue.length >= 1) {
 			debouncedFetchSuggestions(value);
 		} else {
 			if (debounceTimeoutRef.current) {
@@ -725,6 +740,7 @@ export const EventSearch = (): JSX.Element => {
                     autoDetect,
                     distance,
                     results,
+                    scrollPosition: window.scrollY,
                   },
                 },
               });
